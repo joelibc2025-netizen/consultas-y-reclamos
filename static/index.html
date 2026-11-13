@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    if (new URLSearchParams(location.search).get("view") === "desktop") {
+      const root = document.documentElement;
+      const canvasWidth = 1280;
+      const updateCanvasHeight = () => {
+        const layout = document.querySelector(".app-layout");
+        if (!layout) return;
+        const scale = Number(root.style.getPropertyValue("--desktop-view-scale")) || 1;
+        root.style.setProperty("--desktop-view-content-height", `${layout.offsetHeight * scale}px`);
+      };
+      const updateSidebarScrollOffset = () => {
+        const scale = Number(root.style.getPropertyValue("--desktop-view-scale")) || 1;
+        root.style.setProperty(
+          "--desktop-view-sidebar-scroll",
+          `${window.scrollY / scale}px`
+        );
+      };
+      const updateDesktopScale = () => {
+        const scale = Math.min(1, window.innerWidth / canvasWidth);
+        root.style.setProperty("--desktop-view-scale", String(scale));
+        root.style.setProperty("--desktop-view-scale-inverse", String(1 / scale));
+        root.style.setProperty("--desktop-view-mobile-sidebar-width", `${window.innerWidth}px`);
+        root.style.setProperty("--desktop-view-mobile-sidebar-height", "52px");
+        root.style.setProperty("--desktop-view-mobile-shell-offset", `${52 / scale}px`);
+        root.style.setProperty("--desktop-view-height", `${window.innerHeight / scale}px`);
+        updateSidebarScrollOffset();
+        updateCanvasHeight();
+      };
+      root.classList.add("desktop-view-mode");
+      updateDesktopScale();
+      window.addEventListener("resize", updateDesktopScale);
+      window.addEventListener("scroll", updateSidebarScrollOffset, { passive: true });
+      document.addEventListener("DOMContentLoaded", () => {
+        const layout = document.querySelector(".app-layout");
+        if (!layout) return;
+        new ResizeObserver(updateCanvasHeight).observe(layout);
+        updateCanvasHeight();
+      });
+    }
+  </script>
+  <meta name="theme-color" content="#f3f6fb">
+  <title>Panel de seguimiento de casos</title>
+  <link rel="stylesheet" href="/static/dashboard.css?v=desktop-canvas-6">
+</head>
+<body>
+  <div class="app-layout sidebar-collapsed" id="app-layout">
+    <aside class="sidebar" id="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-identity">
+          <span class="sidebar-brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z" stroke="currentColor" stroke-width="1.7"/><path d="M8 8h8M8 12h3m2 0h3m-8 4h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </span>
+          <span class="sidebar-brand-name">Gestión de casos</span>
+        </div>
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Expandir barra lateral" aria-expanded="false" title="Expandir barra lateral">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <nav class="sidebar-nav" aria-label="Vistas del panel">
+        <p class="sidebar-nav-label">VISTAS</p>
+        <button type="button" class="sidebar-link sidebar-link-current" id="dashboard-nav" aria-current="page" title="Panel actual">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/></svg>
+          <span class="sidebar-link-label">Panel actual</span>
+        </button>
+        <button type="button" class="sidebar-link" disabled title="Disponible próximamente">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 3v4m8-4v4M4 10h16m-12 4h2m4 0h2m-8 3h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span class="sidebar-link-label">Detalle mensual</span>
+        </button>
+        <button type="button" class="sidebar-link" id="advisors-nav" title="Ver todos los asesores">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0m2-13.5a3 3 0 0 1 0 5.8m1 2.2a4.5 4.5 0 0 1 3 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span class="sidebar-link-label">Asesores</span>
+        </button>
+        <button type="button" class="sidebar-link desktop-view-toggle" id="desktop-view-toggle" aria-label="Ver sitio para computadoras" aria-pressed="false" title="Sitio para computadoras">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 21h8m-4-4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span class="desktop-view-toggle-label">PC</span>
+        </button>
+        <button type="button" class="sidebar-link" disabled title="Disponible próximamente">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sidebar-link-label">Seguimiento de casos</span>
+        </button>
+        <button type="button" class="sidebar-link" disabled title="Disponible próximamente">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4.5h8l3 3v12H7a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14.5 4.5v4H18m-8 4h5m-5 3h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sidebar-link-label">Detalle de casos</span>
+        </button>
+        <button type="button" class="sidebar-link" disabled title="Disponible próximamente">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 7 3v5c0 4.4-2.8 7.8-7 10-4.2-2.2-7-5.6-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sidebar-link-label">Calidad</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">Más vistas<br>próximamente</div>
+    </aside>
+    <main class="shell" id="main-content">
+    <header class="topbar">
+      <div>
+        <h1>Panel de seguimiento de casos</h1>
+        <p class="subtitle">Indicadores organizados según la clasificación y reglas de conteo de BD FINAL.</p>
+      </div>
+      <div class="topbar-tools">
+        <button type="button" class="upload-button" id="upload-excel-button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v4A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Cargar Excel
+        </button>
+        <input id="excel-file-input" type="file" accept=".xlsx,.xlsm" hidden>
+        <button type="button" class="upload-button export-button" id="export-excel-button" title="Exportar los casos filtrados a Excel">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 18v2h14v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Exportar Excel
+        </button>
+        <div class="period-pill" id="period-pill">Cargando periodo...</div>
+      </div>
+    </header>
+
+    <div class="notice" id="data-notice" role="status">Conectando con la base de casos...</div>
+    <div class="notice warning" id="quality-notice" hidden></div>
+
+    <section class="panel filters" aria-label="Filtros del panel">
+      <div class="field"><label for="area">Área</label><select id="area"><option value="">Todas las áreas</option></select></div>
+      <div class="field"><label for="gestor">Asesor final</label><select id="gestor"><option value="">Todos los asesores</option></select></div>
+      <div class="field"><label for="tipo">Tipo de caso final</label><select id="tipo"><option value="">Todos los tipos</option></select></div>
+      <div class="field"><label for="motivo">Motivo final</label><select id="motivo"><option value="">Todos los motivos</option></select></div>
+      <div class="field"><label for="submotivo">Submotivo final</label><select id="submotivo"><option value="">Todos los submotivos</option></select></div>
+      <div class="field"><label for="alerta_solucion">Alerta solución</label>
+        <select id="alerta_solucion"><option value="">Todas</option><option>SOLUCIONADO</option><option>NO SOLUCIONADO</option></select>
+      </div>
+      <div class="field"><label for="condicion_usuario">Condición usuario</label>
+        <select id="condicion_usuario"><option value="">Todas</option><option>CERRADO</option><option>PENDIENTE</option><option value="SIN CONDICIÓN">SIN CONDICIÓN</option></select>
+      </div>
+      <div class="field"><label for="condicion_final_usuario">Condición final usuario</label>
+        <select id="condicion_final_usuario"><option value="">Todas</option><option>ATENDIDO</option><option>PENDIENTE</option><option value="CAMPO EN BLANCO">CAMPO EN BLANCO</option></select>
+      </div>
+      <div class="field"><label for="empresa">Empresa</label><select id="empresa"><option value="">Todas las empresas</option></select></div>
+      <div class="field"><label for="canal">Canal</label><select id="canal"><option value="">Todos los canales</option></select></div>
+      <div class="field"><label for="desde">Fecha de ingreso desde</label><input id="desde" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" autocomplete="off"></div>
+      <div class="field"><label for="hasta">Fecha de ingreso hasta</label><input id="hasta" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" autocomplete="off"></div>
+      <div class="field search-field"><label for="buscar">Buscar por ID, área, asesor, tipo, motivo o empresa</label><input id="buscar" type="search" placeholder="Escribe para buscar..."></div>
+      <button id="clear" type="button">Limpiar filtros</button>
+    </section>
+
+    <section class="table-panel" id="advisor-view" aria-labelledby="area-efficiency-title">
+      <section class="table-panel" id="area-efficiency-section" aria-labelledby="area-efficiency-title">
+        <div class="table-head">
+          <div>
+            <h2 class="panel-title" id="area-efficiency-title">Resumen de gestión por área</h2>
+            <p id="area-efficiency-subtitle">Indicadores del período según los filtros seleccionados.</p>
+          </div>
+          <div class="area-efficiency-actions">
+            <p id="area-efficiency-count"></p>
+            <button type="button" class="chart-back-button" id="area-efficiency-back" aria-label="Volver a todas las áreas" title="Volver a todas las áreas" hidden>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="table-download-button" id="area-efficiency-download" data-export-target="area-efficiency-section" data-export-name="resumen-de-gestion-por-area.png" title="Descargar resumen de gestión por área como PNG" aria-label="Descargar resumen de gestión por área como PNG">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="advisor-area-table-wrap">
+          <table class="advisor-area-table area-efficiency-table">
+            <thead>
+              <tr>
+                <th id="area-efficiency-row-label" rowspan="2" class="area-efficiency-group-management">ÁREA</th>
+                <th colspan="4" class="area-efficiency-group-management">GESTIÓN</th>
+                <th colspan="3" class="area-efficiency-group-solved">SOLUCIONADOS</th>
+                <th colspan="3" class="area-efficiency-group-unsolved">NO SOLUCIONADOS</th>
+                <th colspan="2" class="area-efficiency-group-performance">EFICIENCIA</th>
+              </tr>
+              <tr>
+                <th class="area-efficiency-group-management area-efficiency-group-start">TOTAL CASOS<br>GESTIONADOS</th>
+                <th class="area-efficiency-group-management">% TOTAL CASOS<br>GESTIONADOS</th>
+                <th class="area-efficiency-group-management" title="Promedio de días transcurridos en todos los casos gestionados">PROMEDIO DE DÍAS<br><small>CASOS GESTIONADOS</small></th>
+                <th class="area-efficiency-group-management" title="Porcentaje de casos gestionados con hasta 2 días">% INDICADOR<br><small>PROMEDIO DE DÍAS</small></th>
+                <th class="area-efficiency-group-solved area-efficiency-group-start">CASOS</th>
+                <th class="area-efficiency-group-solved">% SOLUCIONADOS</th>
+                <th class="area-efficiency-group-solved" title="Promedio de días transcurridos en casos solucionados">PROMEDIO DE DÍAS<br><small>CASOS SOLUCIONADOS</small></th>
+                <th class="area-efficiency-group-unsolved area-efficiency-group-start">CASOS</th>
+                <th class="area-efficiency-group-unsolved">% NO<br>SOLUCIONADOS</th>
+                <th class="area-efficiency-group-unsolved" title="Promedio de días transcurridos en casos no solucionados">PROMEDIO DE DÍAS<br><small>CASOS NO SOLUCIONADOS</small></th>
+                <th class="area-efficiency-group-performance area-efficiency-group-start">EFICIENCIA<br>GENERAL</th>
+                <th class="area-efficiency-group-performance">ESTADO</th>
+              </tr>
+            </thead>
+            <tbody id="area-efficiency-body"></tbody>
+            <tfoot id="area-efficiency-foot"></tfoot>
+          </table>
+        </div>
+      </section>
+      <section class="area-efficiency-analytics" aria-labelledby="area-efficiency-analytics-title">
+        <div class="section-heading">
+          <h2 id="area-efficiency-analytics-title">Gráficos del resumen por área</h2>
+          <p>Indicadores visuales calculados con los mismos filtros y datos de la tabla.</p>
+        </div>
+        <div id="area-efficiency-kpis" class="area-efficiency-kpis"></div>
+        <div class="area-efficiency-chart-grid">
+          <article class="area-efficiency-chart-card" aria-labelledby="area-efficiency-pie-title">
+            <h3 id="area-efficiency-pie-title" class="area-efficiency-chart-title">Distribución de casos por área</h3>
+            <p class="area-efficiency-chart-subtitle">Participación de cada área en los casos gestionados filtrados.</p>
+            <div id="area-efficiency-pie"></div>
+          </article>
+          <article class="area-efficiency-chart-card" aria-labelledby="area-efficiency-bars-title">
+            <h3 id="area-efficiency-bars-title" class="area-efficiency-chart-title">Eficiencia general por área</h3>
+            <p class="area-efficiency-chart-subtitle">Comparación de la eficiencia general por área.</p>
+            <div class="area-efficiency-bar-legend" aria-label="Componentes de la eficiencia">
+              <span><i></i>Solucionados</span>
+              <span><i class="area-efficiency-legend-time"></i>Indicador promedio de días</span>
+            </div>
+            <div id="area-efficiency-bars" class="area-efficiency-bars"></div>
+          </article>
+        </div>
+        <article class="area-efficiency-chart-card" aria-labelledby="area-best-advisors-title">
+          <h3 id="area-best-advisors-title" class="area-efficiency-chart-title">Mejor asesor por área</h3>
+          <p class="area-efficiency-chart-subtitle">Mayor eficiencia; en caso de empate, se priorizan los casos solucionados. Según el período y filtros seleccionados.</p>
+          <div id="area-best-advisors" class="area-best-advisors"></div>
+        </article>
+        <div class="area-category-comparisons">
+          <article class="area-category-comparison-card" aria-labelledby="company-comparison-title">
+            <h3 id="company-comparison-title" class="area-category-comparison-title">CUADRO POR EMPRESA</h3>
+            <div class="area-category-comparison-wrap">
+              <table class="area-category-comparison-table" aria-label="Comparativo de gestión entre empresas">
+                <thead>
+                  <tr>
+                    <th>TIPO DE CASO / EMPRESA</th>
+                    <th>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody id="company-comparison-body"></tbody>
+                <tfoot id="company-comparison-foot"></tfoot>
+              </table>
+            </div>
+          </article>
+          <article class="area-category-comparison-card" aria-labelledby="channel-comparison-title">
+            <h3 id="channel-comparison-title" class="area-category-comparison-title">CUADRO POR CANAL</h3>
+            <div class="area-category-comparison-wrap">
+              <table class="area-category-comparison-table" aria-label="Comparativo de gestión entre canales">
+                <thead>
+                  <tr>
+                    <th>TIPO DE CASO / CANAL</th>
+                    <th>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody id="channel-comparison-body"></tbody>
+                <tfoot id="channel-comparison-foot"></tfoot>
+              </table>
+            </div>
+          </article>
+        </div>
+        <div class="area-motive-breakdown-grid">
+          <article class="area-motive-breakdown-card" aria-labelledby="area-consult-motives-title">
+            <h3 id="area-consult-motives-title" class="area-motive-breakdown-title">CONSULTAS</h3>
+            <div class="area-motive-breakdown-wrap">
+              <table class="area-motive-breakdown-table" aria-label="Resumen de motivos y submotivos de consultas">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="motive-breakdown-label motive-breakdown-total">MOTIVOS / SUBMOTIVOS</th>
+                    <th colspan="3" class="motive-breakdown-total">TOTAL</th>
+                    <th colspan="3" class="motive-breakdown-solved">SOLUCIONADOS</th>
+                    <th colspan="3" class="motive-breakdown-unsolved">NO SOLUCIONADOS</th>
+                  </tr>
+                  <tr>
+                    <th class="motive-breakdown-total">CASOS</th>
+                    <th class="motive-breakdown-total">% TOTAL</th>
+                    <th class="motive-breakdown-total">PROMEDIO DÍAS</th>
+                    <th class="motive-breakdown-solved">CASOS</th>
+                    <th class="motive-breakdown-solved">% SOLUCIONADOS</th>
+                    <th class="motive-breakdown-solved">PROMEDIO DÍAS</th>
+                    <th class="motive-breakdown-unsolved">CASOS</th>
+                    <th class="motive-breakdown-unsolved">% NO SOLUCIONADOS</th>
+                    <th class="motive-breakdown-unsolved">PROMEDIO DÍAS</th>
+                  </tr>
+                </thead>
+                <tbody id="area-consult-motives-body"></tbody>
+                <tfoot id="area-consult-motives-foot"></tfoot>
+              </table>
+            </div>
+          </article>
+          <article class="area-motive-breakdown-card" aria-labelledby="area-complaint-motives-title">
+            <h3 id="area-complaint-motives-title" class="area-motive-breakdown-title">RECLAMOS</h3>
+            <div class="area-motive-breakdown-wrap">
+              <table class="area-motive-breakdown-table" aria-label="Resumen de motivos y submotivos de reclamos">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="motive-breakdown-label motive-breakdown-total">MOTIVOS / SUBMOTIVOS</th>
+                    <th colspan="3" class="motive-breakdown-total">TOTAL</th>
+                    <th colspan="3" class="motive-breakdown-solved">SOLUCIONADOS</th>
+                    <th colspan="3" class="motive-breakdown-unsolved">NO SOLUCIONADOS</th>
+                  </tr>
+                  <tr>
+                    <th class="motive-breakdown-total">CASOS</th>
+                    <th class="motive-breakdown-total">% TOTAL</th>
+                    <th class="motive-breakdown-total">PROMEDIO DÍAS</th>
+                    <th class="motive-breakdown-solved">CASOS</th>
+                    <th class="motive-breakdown-solved">% SOLUCIONADOS</th>
+                    <th class="motive-breakdown-solved">PROMEDIO DÍAS</th>
+                    <th class="motive-breakdown-unsolved">CASOS</th>
+                    <th class="motive-breakdown-unsolved">% NO SOLUCIONADOS</th>
+                    <th class="motive-breakdown-unsolved">PROMEDIO DÍAS</th>
+                  </tr>
+                </thead>
+                <tbody id="area-complaint-motives-body"></tbody>
+                <tfoot id="area-complaint-motives-foot"></tfoot>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section aria-labelledby="general-title">
+      <div class="section-heading"><h2 id="general-title">Resumen general</h2><p id="general-subtitle">Casos ingresados; solucionados = cerrados + derivados atendidos</p></div>
+      <div class="hero-grid" id="hero-metrics"></div>
+    </section>
+
+    <section aria-labelledby="received-title">
+      <div class="section-heading"><h2 id="received-title">Detalle de casos</h2></div>
+      <div class="received-grid">
+        <article class="breakdown-card" id="breakdown-nonderived">
+          <button type="button" class="breakdown-head detail-trigger" data-detail="recibidos_no_derivados">RECIBIDOS NO DERIVADOS</button>
+          <button type="button" class="breakdown-total detail-trigger" data-detail="recibidos_no_derivados">TOTAL: <span id="received-nonderived-total">0</span></button>
+          <div class="submetrics three-items" id="received-nonderived-breakdown"></div>
+        </article>
+        <article class="breakdown-card" id="breakdown-derived">
+          <div class="breakdown-head">RECIBIDOS DERIVADOS</div>
+          <button type="button" class="breakdown-total detail-trigger" data-detail="recibidos_derivados">TOTAL: <span id="received-derived-total">0</span></button>
+          <div class="submetrics three-items" id="received-derived-breakdown"></div>
+        </article>
+        <article class="breakdown-card" id="breakdown-outgoing">
+          <div class="breakdown-head">SALIENTES DERIVADOS</div>
+          <button type="button" class="breakdown-total detail-trigger" data-detail="salientes">TOTAL: <span id="outgoing-total">0</span></button>
+          <div class="submetrics three-items" id="outgoing-breakdown"></div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="trend-title">
+      <div class="section-heading">
+        <h2 id="trend-title">Tendencia y carga por área</h2>
+        <p>Ingresos y salidas según las áreas definidas por las reglas de conteo</p>
+      </div>
+      <div class="analytics">
+        <article class="panel">
+          <div class="chart-title-row">
+            <h3 class="panel-title" id="income-chart-title">Ingresos contabilizados por año</h3>
+            <button type="button" class="chart-back-button" id="chart-back" aria-label="Mostrar todas las áreas" title="Mostrar todas las áreas" disabled>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <p class="panel-subtitle" id="income-chart-subtitle">Años dentro del periodo filtrado</p>
+          <div class="chart" id="monthly-chart"></div>
+          <div class="monthly-summary" id="monthly-summary" aria-label="Resumen del periodo"></div>
+        </article>
+        <article class="panel">
+          <div class="chart-title-row">
+            <h3 class="panel-title">Casos según perspectiva del área</h3>
+            <button type="button" class="chart-back-button" id="area-chart-back" aria-label="Volver a todas las áreas" title="Volver a todas las áreas" hidden>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <p class="panel-subtitle" id="area-chart-subtitle">Casos según el área atribuida a la categoría, separados por solución</p>
+          <div class="area-chart" id="area-chart"></div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="breakdown-title">
+      <div class="section-heading">
+        <h2 id="breakdown-title">Canales, empresas y motivos</h2>
+        <p>Principales categorías para identificar el origen de los casos</p>
+      </div>
+      <div class="breakdown-grid">
+        <article class="panel"><h3 class="panel-title">Por canal</h3><p class="panel-subtitle">Canal de atención</p><div class="bars" id="channel-chart"></div></article>
+        <article class="panel"><h3 class="panel-title">Por empresa</h3><p class="panel-subtitle">Empresa asociada al caso</p><div class="bars" id="company-chart"></div></article>
+        <article class="panel">
+          <div class="chart-title-row">
+            <h3 class="panel-title" id="reason-chart-title">Motivos principales</h3>
+            <button type="button" class="chart-back-button" id="reason-chart-back" aria-label="Volver a motivos principales" title="Volver a motivos principales" hidden>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <p class="panel-subtitle" id="reason-chart-subtitle">Selecciona un motivo para ver sus submotivos</p>
+          <div class="bars" id="reason-chart"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="advisor-week-section" aria-labelledby="advisor-week-title">
+      <div class="section-heading advisor-week-section-heading">
+        <div class="section-heading-copy">
+          <h2 id="advisor-week-title">Seguimiento semanal por asesor y área</h2>
+          <p id="advisor-week-subtitle">Casos semanales y acumulado mensual según los filtros activos</p>
+        </div>
+        <div class="advisor-week-toolbar">
+          <label class="advisor-week-switch">
+            <input type="checkbox" id="advisor-week-mode-toggle" role="switch" aria-label="Cambiar a vista mensual" aria-checked="false">
+            <span class="advisor-week-weekly">SEMANAL</span>
+            <span class="advisor-week-switch-track" aria-hidden="true"></span>
+            <span class="advisor-week-monthly">MENSUAL</span>
+          </label>
+        </div>
+        <button type="button" class="table-download-button" id="advisor-week-download" data-export-target="advisor-week-section" data-export-name="seguimiento-semanal-y-acumulado-mensual.png" title="Descargar seguimiento semanal y acumulado mensual como PNG" aria-label="Descargar seguimiento semanal y acumulado mensual como PNG">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="panel advisor-week-table-wrap">
+        <div class="advisor-week-period-label" id="advisor-week-period-label" aria-live="polite"></div>
+        <table class="advisor-week-table" id="advisor-week-table"></table>
+      </div>
+    </section>
+
+    <section aria-labelledby="advisor-flow-title">
+      <div class="section-heading">
+        <h2 id="advisor-flow-title">Seguimiento semanal por categoría, área y asesor</h2>
+        <p id="advisor-flow-subtitle">Conteo diario y estado semanal según los filtros activos</p>
+      </div>
+      <div class="advisor-flow-grid">
+        <article class="advisor-flow-panel" id="advisor-received-panel">
+          <div class="advisor-flow-panel-heading">
+            <div class="advisor-flow-panel-heading-copy">
+              <h3 class="advisor-flow-title">RECIBIDOS NO DERIVADOS</h3>
+              <div class="advisor-week-toolbar">
+                <label class="advisor-week-switch">
+                  <input type="checkbox" id="advisor-received-mode-toggle" role="switch" aria-label="Cambiar recibidos no derivados a vista mensual" aria-checked="false">
+                  <span class="advisor-week-weekly">SEMANAL</span>
+                  <span class="advisor-week-switch-track" aria-hidden="true"></span>
+                  <span class="advisor-week-monthly">MENSUAL</span>
+                </label>
+              </div>
+            </div>
+            <button type="button" class="table-download-button" data-export-target="advisor-received-panel" data-export-name="casos-recibidos-no-derivados.png" title="Descargar casos recibidos no derivados como PNG" aria-label="Descargar casos recibidos no derivados como PNG">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="advisor-flow-table-wrap"><table class="advisor-flow-table" id="advisor-received-table"></table></div>
+        </article>
+        <article class="advisor-flow-panel" id="advisor-derived-panel">
+          <div class="advisor-flow-panel-heading">
+            <div class="advisor-flow-panel-heading-copy">
+              <h3 class="advisor-flow-title">RECIBIDOS DERIVADOS</h3>
+              <div class="advisor-week-toolbar">
+                <label class="advisor-week-switch">
+                  <input type="checkbox" id="advisor-derived-mode-toggle" role="switch" aria-label="Cambiar recibidos derivados a vista mensual" aria-checked="false">
+                  <span class="advisor-week-weekly">SEMANAL</span>
+                  <span class="advisor-week-switch-track" aria-hidden="true"></span>
+                  <span class="advisor-week-monthly">MENSUAL</span>
+                </label>
+              </div>
+            </div>
+            <button type="button" class="table-download-button" data-export-target="advisor-derived-panel" data-export-name="casos-recibidos-derivados.png" title="Descargar casos recibidos derivados como PNG" aria-label="Descargar casos recibidos derivados como PNG">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="advisor-flow-table-wrap"><table class="advisor-flow-table" id="advisor-derived-table"></table></div>
+        </article>
+        <article class="advisor-flow-panel advisor-flow-panel-wide" id="advisor-outgoing-panel">
+          <div class="advisor-flow-panel-heading">
+            <div class="advisor-flow-panel-heading-copy">
+              <h3 class="advisor-flow-title">SALIENTES DERIVADOS</h3>
+              <div class="advisor-week-toolbar">
+                <label class="advisor-week-switch">
+                  <input type="checkbox" id="advisor-outgoing-mode-toggle" role="switch" aria-label="Cambiar salientes derivados a vista mensual" aria-checked="false">
+                  <span class="advisor-week-weekly">SEMANAL</span>
+                  <span class="advisor-week-switch-track" aria-hidden="true"></span>
+                  <span class="advisor-week-monthly">MENSUAL</span>
+                </label>
+              </div>
+            </div>
+            <button type="button" class="table-download-button" data-export-target="advisor-outgoing-panel" data-export-name="casos-salientes-derivados.png" title="Descargar casos salientes derivados como PNG" aria-label="Descargar casos salientes derivados como PNG">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="advisor-flow-table-wrap"><table class="advisor-flow-table" id="advisor-outgoing-table"></table></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="table-panel" id="followup-section" aria-labelledby="followup-title">
+      <div class="table-head">
+        <div>
+          <h2 class="panel-title" id="followup-title">Seguimiento de casos</h2>
+          <p id="followup-subtitle">Casos no solucionados del mes de la fecha de ingreso hasta</p>
+        </div>
+        <p id="followup-count"></p>
+        <button type="button" class="table-download-button" data-export-target="followup-section" data-export-name="seguimiento-de-casos.png" title="Descargar seguimiento de casos como PNG" aria-label="Descargar seguimiento de casos como PNG">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 15v5h14v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table class="cases-table followup-table">
+          <thead id="followup-head"><tr></tr></thead>
+          <tbody id="followup-body"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="followup-pagination" hidden>
+        <button type="button" id="followup-prev">Anterior</button>
+        <span id="followup-page"></span>
+        <button type="button" id="followup-next">Siguiente</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="quality-title">
+      <div class="section-heading">
+        <h2 id="quality-title">Control de calidad</h2>
+        <p>Revisiones sugeridas por las reglas y los campos de BD FINAL</p>
+      </div>
+      <div class="quality-grid" id="quality-grid"></div>
+    </section>
+
+    <section class="table-panel" aria-labelledby="cases-title">
+      <div class="table-head">
+        <div class="case-table-heading">
+          <h2 class="panel-title" id="cases-title">Detalle de casos recientes</h2>
+        </div>
+        <div class="case-table-actions">
+          <p id="table-count"></p>
+          <button type="button" class="chart-back-button case-detail-back" id="case-detail-back" aria-label="Volver al apartado anterior" title="Volver al apartado anterior" hidden>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 18-6-6 6-6M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="cases-table">
+          <thead id="cases-head"><tr></tr></thead>
+          <tbody id="cases-table"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="table-pagination" hidden>
+        <button type="button" id="detail-prev">Anterior</button>
+        <span id="detail-page"></span>
+        <button type="button" id="detail-next">Siguiente</button>
+      </div>
+    </section>
+    <dialog class="text-dialog" id="case-text-dialog" aria-labelledby="case-text-title">
+      <div class="text-dialog-head">
+        <h2 id="case-text-title"></h2>
+        <button type="button" class="text-dialog-close" id="case-text-close" aria-label="Cerrar">×</button>
+      </div>
+      <p class="text-dialog-content" id="case-text-content"></p>
+    </dialog>
+    <div class="footer">Fuente: hoja BD FINAL · El detalle muestra las columnas originales y calculadas solicitadas</div>
+    </main>
+  </div>
+
+  <script defer src="/static/dashboard.js?v=dashboard-load-6"></script>
+</body>
+</html>
